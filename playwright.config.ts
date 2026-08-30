@@ -1,4 +1,11 @@
 import { defineConfig, devices } from '@playwright/test'
+import { loadEnv } from 'vite'
+
+// Werte aus .env auch für den Test-Prozess verfügbar machen (Vite lädt sie nur
+// für den Build). Bereits gesetzte Env-Variablen — etwa in CI — gewinnen.
+for (const [key, value] of Object.entries(loadEnv('production', process.cwd(), ''))) {
+  if (process.env[key] === undefined) process.env[key] = value
+}
 
 // E2E läuft gegen den Vite-Preview-Server unter der Pages-Base.
 const PORT = 4173

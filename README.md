@@ -37,6 +37,21 @@ Supabase-Projekt, Migrationen und Auth-Redirects: **[supabase/README.md](supabas
 
 Icons neu erzeugen (Windows): `powershell -File scripts/generate-icons.ps1`
 
+### Angemeldete E2E-Tests
+
+Magic Link lässt sich nicht automatisieren. Die Tests, die eine Session brauchen
+(`e2e/mission.spec.ts`, `e2e/roles.spec.ts`), melden sich stattdessen per Passwort
+an. Dafür in Supabase → Authentication → Users → **Add user** einen Testnutzer mit
+Passwort und „Auto Confirm User“ anlegen und in die `.env` eintragen:
+
+```
+E2E_EMAIL=e2e@example.com
+E2E_PASSWORD=…
+```
+
+Ohne diese Werte überspringen sich die betroffenen Tests, statt fehlzuschlagen.
+Die App selbst kennt keinen Passwort-Login.
+
 ## Deployment
 
 Push auf `main` startet `.github/workflows/deploy.yml`: Lint → Typecheck →

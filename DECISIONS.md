@@ -57,3 +57,46 @@ falls später eine eigene Domain dazukommt.
 Statt der Vite-üblichen Aufteilung in `tsconfig.app.json`/`tsconfig.node.json`
 mit Project References. Grund: `prompt.md` fordert, dass `npx tsc --noEmit` null
 Fehler meldet — bei Project References prüft dieser Aufruf gar nichts.
+
+### D11 — Projekt-URL ohne `/rest/v1/`
+Der gelieferte Wert für `VITE_SUPABASE_URL` endete auf `/rest/v1/`. `createClient()`
+hängt diesen Pfad selbst an; mit dem Suffix entstünde `/rest/v1/rest/v1/…` → HTTP 404
+(nachgemessen). In der `.env` steht deshalb die reine Projekt-URL.
+
+### D12 — Publishable Key statt JWT-Anon-Key
+`sb_publishable_…` funktioniert ab supabase-js v2 mit aktueller Minor-Version;
+installiert ist 2.112.4. Bestätigt über `GET /auth/v1/settings` → HTTP 200.
+Am Sicherheitsmodell ändert das nichts: der Schlüssel ist öffentlich, die
+Absicherung macht RLS. Die Variable heißt weiterhin `VITE_SUPABASE_ANON_KEY`,
+weil `prompt.md` diesen Namen vorgibt.
+
+## Phase 2
+
+### D13 — Eigener Markdown-Renderer statt Bibliothek
+`prompt.md` erlaubt außer `lucide-react` keine zusätzlichen UI-Pakete. Der
+Renderer in `src/lib/markdown.tsx` erzeugt ausschließlich React-Elemente, nutzt
+kein `dangerouslySetInnerHTML` und lässt bei Links nur `http(s)` zu — HTML oder
+`javascript:` aus dem Missionstext kann damit nicht ausgeführt werden. Der
+Block-Parser liegt getrennt in `markdownParser.ts`, damit er ohne React testbar ist.
+
+### D14 — Versionshistorie per Datenbank-Trigger
+Das Anlegen einer Version macht der Trigger `mission_snapshot`, nicht der Client.
+So geht keine Version verloren, egal welcher Client schreibt. „Wiederherstellen“
+ist deshalb kein Sonderfall, sondern ein normales Speichern des alten Inhalts —
+die Historie bleibt lückenlos.
+
+### D15 — Rollen sortieren per Pfeiltasten, nicht Drag & Drop
+Primäres Gerät ist das Smartphone; Drag & Drop mit 44px-Zielen ist dort fehleranfällig.
+`prompt.md` fordert Drag & Drop ausdrücklich nur für das Terminieren (Phase 3, Desktop).
+
+### D16 — Passwort-Login nur für E2E-Tests
+Magic Link lässt sich nicht automatisieren. `e2e/fixtures.ts` holt sich per
+`/auth/v1/token?grant_type=password` eine Session und legt sie in den
+localStorage-Key von supabase-js. Die App selbst bleibt reiner Magic-Link-Login;
+der Testpfad existiert nur im Testcode. Ohne `E2E_EMAIL`/`E2E_PASSWORD`
+überspringen sich diese Tests, statt rot zu werden.
+
+### D17 — ESLint-React-Regeln nur auf `src/`
+Playwrights Fixture-Parameter heißt `use` und wurde von `react-hooks/rules-of-hooks`
+als Hook-Aufruf gewertet. Statt die Regel global zu lockern, gilt sie jetzt nur
+für `src/`; `e2e/` und die Config-Dateien laufen ohne React-Regeln.

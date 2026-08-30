@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { CalendarDays, Compass, ListChecks, Users } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
+import { ensureSeeded } from '@/lib/api'
 
 const NAV = [
   { to: '/heute', label: 'Heute', Icon: ListChecks },
@@ -17,6 +19,15 @@ function linkClasses(isActive: boolean) {
 
 export default function AppLayout() {
   const { user, signOut } = useAuth()
+
+  // Beim ersten Login Rollen, Fixtermine und eine leere Mission anlegen.
+  // Fehler hier sind nicht kritisch — die Seiten melden sie selbst.
+  useEffect(() => {
+    if (!user) return
+    void ensureSeeded().catch((error: unknown) => {
+      console.warn('Seed übersprungen:', error)
+    })
+  }, [user])
 
   return (
     <div className="min-h-dvh md:flex">
