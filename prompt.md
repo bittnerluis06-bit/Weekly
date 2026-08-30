@@ -50,16 +50,8 @@ Lege ein SQL-Migrationsfile `supabase/migrations/0001_init.sql` an mit:
 
 Schreibe dazu ein Seed-Script mit meinen realen Daten:
 
-**Rollen:** Freund · Sportler & Teammanager · Sohn · Student & Kollege · Unternehmer
+**Rollen:** Freund · Sportler · Sohn · Kollege · Side Hustle - Persönlich
 
-**Fixtermine:**
-| Tag | Termin | Zeit |
-|---|---|---|
-| Dienstag | Uni (inkl. je 45 min Fahrt) | 07:15–18:00 |
-| Mittwoch | Lauftraining (inkl. Fahrt) | 17:15–19:00 |
-| Donnerstag | Uni (inkl. je 45 min Fahrt) | 07:15–12:00 |
-| Freitag | Berufsschule (nicht jede Woche) | 06:30–15:30 |
-| Sonntag | Schwimmtraining (inkl. Fahrt) | 07:00–10:20 |
 
 ---
 
