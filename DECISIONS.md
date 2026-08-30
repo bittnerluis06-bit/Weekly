@@ -96,6 +96,14 @@ localStorage-Key von supabase-js. Die App selbst bleibt reiner Magic-Link-Login;
 der Testpfad existiert nur im Testcode. Ohne `E2E_EMAIL`/`E2E_PASSWORD`
 überspringen sich diese Tests, statt rot zu werden.
 
+### D18 — Fixtermine bleiben im Seed, obwohl aus `prompt.md` entfernt
+Commit `2df7eee` hat die Rollenliste geändert (jetzt: Freund · Sportler · Sohn ·
+Kollege · Side Hustle - Persönlich) und die Fixtermin-Tabelle ersatzlos gestrichen.
+Die Rollen sind in `0003_seed_roles_update.sql` nachgezogen. Die Fixtermine bleiben
+vorerst im Seed: `fixed_events` ist in Abschnitt 3 weiterhin Teil des Datenmodells,
+Phase 3 baut darauf auf, und es sind reale Termine — sie wieder zu entfernen ist
+billiger, als sie zu rekonstruieren. **Rückfrage an den Nutzer offen.**
+
 ### D17 — ESLint-React-Regeln nur auf `src/`
 Playwrights Fixture-Parameter heißt `use` und wurde von `react-hooks/rules-of-hooks`
 als Hook-Aufruf gewertet. Statt die Regel global zu lockern, gilt sie jetzt nur

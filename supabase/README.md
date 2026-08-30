@@ -13,6 +13,7 @@ Ohne CLI, per Dashboard:
 1. Supabase → **SQL Editor** → New query.
 2. Inhalt von `migrations/0001_init.sql` einfügen → **Run**.
 3. Danach dasselbe mit `migrations/0002_seed_function.sql`.
+4. Und mit `migrations/0003_seed_roles_update.sql` (aktualisierte Rollenliste).
 
 Mit CLI (optional, braucht `supabase login` + Projekt-Ref):
 
