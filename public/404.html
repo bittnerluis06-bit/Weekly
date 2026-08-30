@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Weekly Planner</title>
+    <script>
+      // GitHub Pages kennt keine SPA-Routen. Wir merken uns den angefragten
+      // Pfad und laden die App-Wurzel; index.html stellt die Route wieder her.
+      (function () {
+        var base = '/Weekly/'
+        var path = location.pathname
+        if (path.indexOf(base) === 0) path = path.slice(base.length - 1)
+        sessionStorage.setItem('spa-redirect', path + location.search + location.hash)
+        location.replace(base)
+      })()
+    </script>
+  </head>
+  <body></body>
+</html>
