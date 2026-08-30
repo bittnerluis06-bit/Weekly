@@ -1,4 +1,5 @@
 import { test as base, expect, type Page } from '@playwright/test'
+import { normalizeSupabaseUrl } from '../src/lib/supabaseUrl'
 
 /**
  * Angemeldete Tests.
@@ -12,7 +13,7 @@ import { test as base, expect, type Page } from '@playwright/test'
  * E2E_EMAIL, E2E_PASSWORD. Fehlt eine davon, werden die Tests übersprungen.
  */
 
-const url = process.env.VITE_SUPABASE_URL
+const url = normalizeSupabaseUrl(process.env.VITE_SUPABASE_URL)
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY
 const email = process.env.E2E_EMAIL
 const password = process.env.E2E_PASSWORD

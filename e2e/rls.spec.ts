@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { normalizeSupabaseUrl } from '../src/lib/supabaseUrl'
 
 // DoD 17: Ohne gültigen Login liefert jede Query null Datensätze und jeder
 // Schreibversuch wird abgelehnt — abgesichert allein über Row Level Security.
 
-const url = process.env.VITE_SUPABASE_URL
+const url = normalizeSupabaseUrl(process.env.VITE_SUPABASE_URL)
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY
 
 const TABLES = [
