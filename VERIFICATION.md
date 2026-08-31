@@ -1,6 +1,6 @@
 # Verification
 
-Stand: 30.08.2026 · Phasen 1 und 2 umgesetzt.
+Stand: 31.08.2026 · Phasen 1 und 2 umgesetzt, live deployt.
 
 Legende: **PASS** = geprüft und bestanden · **FAIL** = geprüft bzw. nicht
 verifizierbar, mit Begründung · **OFFEN** = gehört zu einer späteren Phase.
@@ -12,15 +12,16 @@ verifizierbar, mit Begründung · **OFFEN** = gehört zu einer späteren Phase.
 | 1 | `npm run build` läuft ohne Fehler | **PASS** | `✓ built in 13.62s` · PWA `precache 12 entries (494.82 KiB)` |
 | 2 | `npx tsc --noEmit` meldet null Fehler | **PASS** | Exit-Code 0, keine Ausgabe |
 | 3 | `npm run lint` meldet null Errors | **PASS** | `eslint .` → keine Ausgabe, 0 Probleme |
-| 4 | `npx playwright test` — alle Tests grün | **PASS** | `18 passed` (RLS-Suite) und `6 passed` (Smoke); 4 angemeldete Tests werden übersprungen, solange `E2E_EMAIL`/`E2E_PASSWORD` fehlen |
-| 5 | GitHub Actions deployt auf Pages, Live-URL liefert HTTP 200 | **FAIL** | Noch kein Push erfolgt. Pages-Source und Secrets sind laut Nutzer gesetzt; wird mit dem Phase-2-Push geprüft. |
+| 4 | `npx playwright test` — alle Tests grün | **PASS** | Lokal `26 passed, 4 skipped`; in CI (Lauf 33327264963) grün. Die 4 übersprungenen sind die angemeldeten Tests, solange `E2E_EMAIL`/`E2E_PASSWORD` fehlen. |
+| 5 | GitHub Actions deployt auf Pages, Live-URL liefert HTTP 200 | **PASS** | Lauf `33327264963`: `Lint, Typecheck, Tests, Build: success`, `GitHub Pages: success`. `curl https://bittnerluis06-bit.github.io/Weekly/` → **200**, Titel `Weekly Planner`; `/manifest.webmanifest` → 200. |
 
 Zusätzlich, nicht in der DoD gefordert:
 
 | Kriterium | Status | Beleg |
 |---|---|---|
 | Unit-Tests grün | **PASS** | `npm test` → `Test Files 2 passed (2)` · `Tests 14 passed (14)` |
-| Migrationen im Live-Projekt eingespielt | **PASS** | Alle acht Tabellen antworten unter `/rest/v1/` mit HTTP 200; `rpc/seed_my_data` antwortet mit `P0001 seed_my_data: kein eingeloggter Nutzer` — Funktion existiert |
+| Migrationen im Live-Projekt eingespielt | **PASS** | Alle acht Tabellen antworten unter `/rest/v1/` mit HTTP 200; `rpc/seed_my_data` antwortet mit `P0001 seed_my_data: kein eingeloggter Nutzer` — Funktion existiert. Migration `0003` ist noch einzuspielen. |
+| SPA-Deeplink auf GitHub Pages | **PASS** | `e2e/deeplink.spec.ts` → 2 passed. Live liefert `/Weekly/heute` das `404.html` mit Redirect-Skript aus; der HTTP-Status bleibt bauartbedingt 404, im Browser landet man auf der richtigen Route. |
 
 ## Funktional
 
@@ -49,4 +50,10 @@ Zusätzlich, nicht in der DoD gefordert:
 1. **Supabase-Testnutzer** — Authentication → Users → Add user, mit Passwort und
    „Auto Confirm User“. E-Mail und Passwort dann als `E2E_EMAIL`/`E2E_PASSWORD`
    in die lokale `.env` und als GitHub-Actions-Secrets. Blockiert 6 und 7.
-2. **Kriterium 5** wird mit dem ersten Push auf `main` geprüft.
+2. **Migration `0003_seed_roles_update.sql`** im SQL Editor ausführen — sonst
+   seedet die App noch die alte Rollenliste.
+3. **GitHub-Secret `VITE_SUPABASE_URL`** endet auf `/rest/v1/`. Der Code fängt das
+   inzwischen ab (`normalizeSupabaseUrl`), sauberer wäre trotzdem, im Secret die
+   reine Projekt-URL zu hinterlegen.
+4. **Fixtermine**: aus `prompt.md` entfernt, im Seed vorerst behalten — Rückfrage
+   offen, siehe DECISIONS.md D18.
