@@ -97,6 +97,9 @@ test('Fixtermin aus den Einstellungen erscheint am richtigen Wochentag', async (
 }) => {
   test.skip(test.info().project.name !== 'mobile', 'Nur einmal ausführen — geteilte Daten.')
   await resetWeek(db)
+  // Rückstände abgebrochener Läufe entfernen, sonst gibt es mehrere Termine
+  // mit derselben Zeitangabe.
+  await db.remove('fixed_events?title=like.Testtermin%25')
 
   const title = `Testtermin ${Date.now()}`
 
@@ -109,8 +112,10 @@ test('Fixtermin aus den Einstellungen erscheint am richtigen Wochentag', async (
   await page.getByLabel('Ende').fill('19:00')
   await page.getByRole('button', { name: 'Hinzufügen' }).click()
 
-  await expect(page.getByText(title)).toBeVisible()
-  await expect(page.getByText('Mittwoch · 17:15–19:00')).toBeVisible()
+  // An den eindeutigen Titel binden, nicht an die Zeitangabe.
+  const entry = page.getByRole('listitem').filter({ hasText: title })
+  await expect(entry).toBeVisible()
+  await expect(entry).toContainText('Mittwoch · 17:15–19:00')
 
   // In der Wochenplanung steht er unter Mittwoch — und nur dort.
   await page.getByRole('link', { name: 'Woche' }).filter({ visible: true }).click()
@@ -131,6 +136,7 @@ test('Fixtermin aus den Einstellungen erscheint am richtigen Wochentag', async (
   // Aufräumen
   await page.getByRole('link', { name: 'Einstellungen' }).filter({ visible: true }).click()
   await page.getByRole('button', { name: `${title} löschen` }).click()
-  await page.getByRole('button', { name: 'Löschen' }).click()
+  // exact, sonst trifft der Name auch den Papierkorb-Knopf „<Titel> löschen“.
+  await page.getByRole('button', { name: 'Löschen', exact: true }).click()
   await expect(page.getByText(title)).toBeHidden()
 })
