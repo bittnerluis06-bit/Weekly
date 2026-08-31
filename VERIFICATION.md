@@ -12,8 +12,8 @@ verifizierbar, mit Begründung · **OFFEN** = gehört zu einer späteren Phase.
 | 1 | `npm run build` läuft ohne Fehler | **PASS** | `✓ built in 13.62s` · PWA `precache 12 entries (494.82 KiB)` |
 | 2 | `npx tsc --noEmit` meldet null Fehler | **PASS** | Exit-Code 0, keine Ausgabe |
 | 3 | `npm run lint` meldet null Errors | **PASS** | `eslint .` → keine Ausgabe, 0 Probleme |
-| 4 | `npx playwright test` — alle Tests grün | **PASS** | Lokal `26 passed, 4 skipped`; in CI (Lauf 33327264963) grün. Die 4 übersprungenen sind die angemeldeten Tests, solange `E2E_EMAIL`/`E2E_PASSWORD` fehlen. |
-| 5 | GitHub Actions deployt auf Pages, Live-URL liefert HTTP 200 | **PASS** | Lauf `33327264963`: `Lint, Typecheck, Tests, Build: success`, `GitHub Pages: success`. `curl https://bittnerluis06-bit.github.io/Weekly/` → **200**, Titel `Weekly Planner`; `/manifest.webmanifest` → 200. |
+| 4 | `npx playwright test` — alle Tests grün | **PASS** | CI-Lauf `33402965808`: `32 passed, 2 skipped`. Übersprungen sind nur die beiden Wochen-Tests im Desktop-Projekt — sie arbeiten auf denselben Daten und laufen deshalb bewusst nur im Mobile-Projekt (390×844). Lokal `26 passed, 8 skipped`, weil hier kein Testnutzer-Passwort hinterlegt ist. |
+| 5 | GitHub Actions deployt auf Pages, Live-URL liefert HTTP 200 | **PASS** | Lauf `33402965808`: `Lint, Typecheck, Tests, Build: success`, `GitHub Pages: success`. `curl https://bittnerluis06-bit.github.io/Weekly/` → **200**, Titel `Weekly Planner`; `/manifest.webmanifest` → 200. |
 
 Zusätzlich, nicht in der DoD gefordert:
 
@@ -27,10 +27,10 @@ Zusätzlich, nicht in der DoD gefordert:
 
 | # | Kriterium | Status | Beleg / Anmerkung |
 |---|---|---|---|
-| 6 | Mission speichern, neu laden, Version wiederherstellen | **FAIL** | Test ist geschrieben (`e2e/mission.spec.ts`), läuft aber nicht: `E2E_PASSWORD` ist noch der Platzhalter `<dein Passwort>`, die Anmeldung scheitert mit `invalid_credentials` (HTTP 400). Magic Link lässt sich nicht automatisieren, deshalb meldet sich der Test per Passwort an (`e2e/fixtures.ts`). Mit dem echten Passwort läuft er ohne weitere Änderung mit. |
-| 7 | Rolle + kurz-/langfristiges Ziel, getrennt dargestellt | **FAIL** | Gleiche Ursache; Test liegt in `e2e/roles.spec.ts`. |
-| 8 | Woche planen: 5 Rollen × 2 Aktivitäten, Quadrant, Verteilung, aktivieren | **FAIL** | Gleiche Ursache; Test liegt in `e2e/week.spec.ts`. Ersatzweise geprüft: 13 Komponententests decken Warnungen bei 0 und >3 Aktivitäten, Quadrantenwahl, Tageszuordnung und die Zusammenfassung ab (`src/components/week/*.test.tsx`). |
-| 9 | Fixtermine erscheinen an den richtigen Wochentagen | **FAIL** | Gleiche Ursache. Ersatzweise geprüft: `StepSchedule` zeigt einen Mittwochstermin unter Mittwoch und nicht unter Donnerstag, inaktive Termine gar nicht (`StepSchedule.test.tsx`). |
+| 6 | Mission speichern, neu laden, Version wiederherstellen | **PASS** | `e2e/mission.spec.ts`, grün in CI-Lauf `33402965808` (mobil und Desktop). Speichern → Reload → Inhalt da → zweite Fassung → Wiederherstellen der ersten → Reload. |
+| 7 | Rolle + kurz-/langfristiges Ziel, getrennt dargestellt | **PASS** | `e2e/roles.spec.ts`, grün im selben Lauf. Prüft zusätzlich, dass kein Ziel im falschen Abschnitt auftaucht. |
+| 8 | Woche planen: 5 Rollen × 2 Aktivitäten, Quadrant, Verteilung, aktivieren | **PASS** | `e2e/week.spec.ts`, grün im selben Lauf. Ergänzend 13 Komponententests zu Warnungen bei 0 und >3 Aktivitäten, Quadrantenwahl und Zusammenfassung. |
+| 9 | Fixtermine erscheinen an den richtigen Wochentagen | **PASS** | `e2e/week.spec.ts`: Fixtermin über die Einstellungen angelegt, erscheint unter Mittwoch mit `17:15–19:00` und nicht unter Donnerstag. Ergänzend `StepSchedule.test.tsx` (inaktive Termine werden ausgeblendet). |
 | 10 | Abhaken übersteht einen Reload | **OFFEN** | Phase 4 |
 | 11 | Verschieben auf morgen in max. 2 Interaktionen | **OFFEN** | Phase 4 |
 | 12 | Review-Kennzahlen korrekt berechnet | **OFFEN** | Phase 4 |
@@ -47,7 +47,9 @@ Zusätzlich, nicht in der DoD gefordert:
 
 ## Offene Blocker
 
-1. **Echtes Passwort des Testnutzers** — geliefert wurde der Platzhalter
-   `<dein Passwort>`. Blockiert die Kriterien 6, 7, 8 und 9.
-2. **Migration `0004_fixed_events_no_seed.sql`** im SQL Editor ausführen — löscht
+1. **Migration `0004_fixed_events_no_seed.sql`** im SQL Editor ausführen — löscht
    die alten Seed-Fixtermine und nimmt sie aus `seed_my_data()` heraus.
+2. **Lokales `E2E_PASSWORD`** — in der `.env` steht noch der Platzhalter
+   `<dein Passwort>`, deshalb überspringen die angemeldeten Tests hier. In den
+   GitHub-Secrets ist das echte Passwort hinterlegt, dort laufen sie. Nur nötig,
+   wenn diese Tests auch lokal laufen sollen.
