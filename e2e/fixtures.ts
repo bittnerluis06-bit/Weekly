@@ -1,4 +1,4 @@
-import { test as base, expect, type Page } from '@playwright/test'
+import { test as base, expect, type APIRequestContext, type Page } from '@playwright/test'
 import { normalizeSupabaseUrl } from '../src/lib/supabaseUrl'
 
 /**
@@ -26,8 +26,13 @@ function storageKey(supabaseUrl: string): string {
   return `sb-${ref}-auth-token`
 }
 
-async function signIn(page: Page) {
-  const response = await page.request.post(`${url}/auth/v1/token?grant_type=password`, {
+interface Session {
+  access_token: string
+  [key: string]: unknown
+}
+
+async function signIn(request: APIRequestContext): Promise<Session> {
+  const response = await request.post(`${url}/auth/v1/token?grant_type=password`, {
     headers: { apikey: anonKey!, 'Content-Type': 'application/json' },
     data: { email, password },
   })
@@ -38,26 +43,64 @@ async function signIn(page: Page) {
     )
   }
 
-  const session = await response.json()
-  const key = storageKey(url!)
-
-  await page.addInitScript(
-    ([k, value]) => {
-      window.localStorage.setItem(k as string, value as string)
-    },
-    [key, JSON.stringify(session)] as const,
-  )
+  return (await response.json()) as Session
 }
 
-export const test = base.extend<{ authedPage: Page }>({
-  authedPage: async ({ page }, use) => {
+/** Direkter REST-Zugriff als angemeldeter Testnutzer — zum Aufräumen. */
+export interface Db {
+  select: <T = unknown>(path: string) => Promise<T>
+  patch: (path: string, body: unknown) => Promise<void>
+  remove: (path: string) => Promise<void>
+}
+
+function makeDb(request: APIRequestContext, token: string): Db {
+  const headers = {
+    apikey: anonKey!,
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  }
+
+  return {
+    async select<T>(path: string) {
+      const response = await request.get(`${url}/rest/v1/${path}`, { headers })
+      expect(response.ok(), await response.text()).toBe(true)
+      return (await response.json()) as T
+    },
+    async patch(path, body) {
+      const response = await request.patch(`${url}/rest/v1/${path}`, { headers, data: body })
+      expect(response.ok(), await response.text()).toBe(true)
+    },
+    async remove(path) {
+      const response = await request.delete(`${url}/rest/v1/${path}`, { headers })
+      expect(response.ok(), await response.text()).toBe(true)
+    },
+  }
+}
+
+export const test = base.extend<{ authedPage: Page; db: Db }>({
+  authedPage: async ({ page, request }, use) => {
     test.skip(!hasCredentials, 'E2E_EMAIL/E2E_PASSWORD nicht gesetzt — angemeldete Tests übersprungen.')
-    await signIn(page)
+    const session = await signIn(request)
+    const key = storageKey(url!)
+
+    await page.addInitScript(
+      ([k, value]) => {
+        window.localStorage.setItem(k as string, value as string)
+      },
+      [key, JSON.stringify(session)] as const,
+    )
+
     await page.goto('./')
     await expect(
       page.getByRole('navigation', { name: 'Hauptnavigation' }).filter({ visible: true }),
     ).toBeVisible()
     await use(page)
+  },
+
+  db: async ({ request }, use) => {
+    test.skip(!hasCredentials, 'E2E_EMAIL/E2E_PASSWORD nicht gesetzt — angemeldete Tests übersprungen.')
+    const session = await signIn(request)
+    await use(makeDb(request, session.access_token))
   },
 })
 

@@ -104,6 +104,44 @@ vorerst im Seed: `fixed_events` ist in Abschnitt 3 weiterhin Teil des Datenmodel
 Phase 3 baut darauf auf, und es sind reale Termine — sie wieder zu entfernen ist
 billiger, als sie zu rekonstruieren. **Rückfrage an den Nutzer offen.**
 
+### D19 — Fixtermine werden nicht mehr geseedet (ersetzt D18)
+Auf Rückfrage bestätigt: `fixed_events` bleibt im Datenmodell, startet aber leer
+und wird in der App gepflegt. `0004_fixed_events_no_seed.sql` löscht die früher
+geseedeten Zeilen (nur exakte Treffer der alten Seed-Werte, von Hand angelegte
+Termine bleiben) und nimmt sie aus `seed_my_data()` heraus.
+
+## Phase 3
+
+### D20 — Einstellungen außerhalb der Tab-Leiste
+Die untere Tab-Leiste ist laut Abschnitt 5 auf Heute · Woche · Rollen · Mission
+festgelegt, ein fünfter Tab wäre ein Verstoß. Die Einstellungen hängen deshalb
+auf Mobile in einer schmalen Kopfzeile (Zahnrad, 44px) und auf Desktop unten in
+der Seitenleiste.
+
+### D21 — Zuordnung per Auswahlfeld, Drag & Drop zusätzlich
+`prompt.md` verlangt Tap → Tagesauswahl auf Mobile und Drag & Drop auf Desktop.
+Umgesetzt als `<select>` pro Aktivität — das ist auf dem Smartphone ein Tap plus
+Tagesauswahl und funktioniert per Tastatur — ergänzt um natives HTML5-Drag-&-Drop
+auf die Tageskarten für die Maus. Kein DnD-Paket nötig.
+
+### D22 — Uhrzeit nur als Startzeit
+Für frei geplante Aktivitäten ist die Uhrzeit laut Abschnitt 4.3 optional und nie
+Pflicht. Gespeichert wird nur `start_time`; `end_time` bleibt leer, weil eine
+Dauer nirgends verlangt ist und ein Pflicht-Ende dem Tageslisten-Modell
+widerspräche.
+
+### D23 — Woche wird beim Öffnen angelegt
+`getOrCreateWeek()` legt die Woche im Status `planning` an, sobald der Bereich
+„Woche“ geöffnet wird. Alternative wäre ein expliziter Knopf gewesen; der
+geführte Ablauf beginnt aber ohnehin bei Schritt 1, und `weeks` hat einen
+Unique-Index auf `(user_id, start_date)`, sodass nichts doppelt entsteht.
+
+### D24 — Komponententests für die Planungsschritte
+Die angemeldeten E2E-Tests sind blockiert (kein Testnutzer-Passwort). Damit
+Phase 3 nicht völlig ungeprüft bleibt, sind die drei Schritt-Komponenten mit
+Testing Library abgedeckt: Warnungen bei 0 bzw. >3 Aktivitäten, Quadranten- und
+Tageszuordnung, Fixtermine am richtigen Tag, optionale Uhrzeit.
+
 ### D17 — ESLint-React-Regeln nur auf `src/`
 Playwrights Fixture-Parameter heißt `use` und wurde von `react-hooks/rules-of-hooks`
 als Hook-Aufruf gewertet. Statt die Regel global zu lockern, gilt sie jetzt nur

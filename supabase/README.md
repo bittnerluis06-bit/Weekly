@@ -14,6 +14,7 @@ Ohne CLI, per Dashboard:
 2. Inhalt von `migrations/0001_init.sql` einfügen → **Run**.
 3. Danach dasselbe mit `migrations/0002_seed_function.sql`.
 4. Und mit `migrations/0003_seed_roles_update.sql` (aktualisierte Rollenliste).
+5. Und mit `migrations/0004_fixed_events_no_seed.sql` (Fixtermine nicht mehr im Seed).
 
 Mit CLI (optional, braucht `supabase login` + Projekt-Ref):
 
@@ -45,7 +46,8 @@ Beide Werte zusätzlich als GitHub Actions Secrets hinterlegen
 ## 5. Seed
 
 Nach dem ersten Login ruft die App `seed_my_data()` automatisch auf, sobald noch
-keine Rollen existieren. Manuell im SQL Editor geht das nicht (dort ist
+keine Rollen existieren. Angelegt werden nur die fünf Rollen und eine leere
+Mission — Fixtermine legst du selbst unter **Einstellungen** in der App an. Manuell im SQL Editor geht das nicht (dort ist
 `auth.uid()` null) — dafür in der App auf **Einstellungen → Beispieldaten anlegen**.
 
 ## Row Level Security

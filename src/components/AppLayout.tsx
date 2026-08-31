@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { CalendarDays, Compass, ListChecks, Users } from 'lucide-react'
+import { CalendarDays, Compass, ListChecks, Settings, Users } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthContext'
 import { ensureSeeded } from '@/lib/api'
@@ -51,8 +51,20 @@ export default function AppLayout() {
             ))}
           </ul>
         </nav>
+        <div className="mt-6 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+          <NavLink
+            to="/einstellungen"
+            className={({ isActive }) =>
+              `touch-target flex items-center gap-3 rounded-lg px-3 py-2 ${linkClasses(isActive)}`
+            }
+          >
+            <Settings className="h-5 w-5" aria-hidden="true" />
+            Einstellungen
+          </NavLink>
+        </div>
+
         {user && (
-          <div className="mt-8 space-y-2 px-2 text-neutral-500 dark:text-neutral-400">
+          <div className="mt-6 space-y-2 px-2 text-neutral-500 dark:text-neutral-400">
             <p className="break-words">{user.email}</p>
             <button type="button" className="underline" onClick={() => void signOut()}>
               Abmelden
@@ -62,6 +74,20 @@ export default function AppLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {/* Mobile: schmale Kopfzeile — die Tab-Leiste bleibt den vier Hauptbereichen vorbehalten. */}
+        <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-1 md:hidden dark:border-neutral-800">
+          <span className="font-semibold tracking-tight">Weekly Planner</span>
+          <NavLink
+            to="/einstellungen"
+            aria-label="Einstellungen"
+            className={({ isActive }) =>
+              `touch-target flex items-center justify-center rounded-lg ${linkClasses(isActive)}`
+            }
+          >
+            <Settings className="h-5 w-5" aria-hidden="true" />
+          </NavLink>
+        </div>
+
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-24 md:px-8 md:pb-8">
           <Outlet />
         </main>

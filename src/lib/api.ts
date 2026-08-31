@@ -1,5 +1,18 @@
 import { isSupabaseConfigured, supabase } from './supabase'
-import type { Goal, GoalStatus, Horizon, Mission, MissionVersion, Role } from './database.types'
+import { toISODate } from './date'
+import type {
+  FixedEvent,
+  Goal,
+  GoalStatus,
+  Horizon,
+  Mission,
+  MissionVersion,
+  Quadrant,
+  Role,
+  Week,
+  WeekItem,
+  Weekday,
+} from './database.types'
 
 export class NotConfiguredError extends Error {
   constructor() {
@@ -147,5 +160,140 @@ export async function setGoalStatus(id: string, status: GoalStatus): Promise<voi
 export async function updateGoal(id: string, patch: Partial<Pick<Goal, 'title' | 'description' | 'target_date'>>): Promise<void> {
   assertConfigured()
   const { error } = await supabase.from('goals').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+// ------------------------------------------------------------------ Fixtermine
+
+export async function listFixedEvents(onlyActive = false): Promise<FixedEvent[]> {
+  assertConfigured()
+  let query = supabase.from('fixed_events').select('*').order('weekday').order('start_time')
+  if (onlyActive) query = query.eq('active', true)
+  const { data, error } = await query
+  if (error) throw error
+  return data ?? []
+}
+
+export async function createFixedEvent(input: {
+  title: string
+  weekday: Weekday
+  start_time: string
+  end_time: string
+}): Promise<FixedEvent> {
+  assertConfigured()
+  const user_id = await currentUserId()
+  const { data, error } = await supabase
+    .from('fixed_events')
+    .insert({ user_id, ...input })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateFixedEvent(
+  id: string,
+  patch: Partial<Pick<FixedEvent, 'title' | 'weekday' | 'start_time' | 'end_time' | 'active'>>,
+): Promise<void> {
+  assertConfigured()
+  const { error } = await supabase.from('fixed_events').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteFixedEvent(id: string): Promise<void> {
+  assertConfigured()
+  const { error } = await supabase.from('fixed_events').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ------------------------------------------------------------------ Wochen
+
+export async function getWeek(startDate: Date): Promise<Week | null> {
+  assertConfigured()
+  const { data, error } = await supabase
+    .from('weeks')
+    .select('*')
+    .eq('start_date', toISODate(startDate))
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+/** Holt die Woche oder legt sie im Status `planning` an. */
+export async function getOrCreateWeek(startDate: Date): Promise<Week> {
+  const existing = await getWeek(startDate)
+  if (existing) return existing
+
+  const user_id = await currentUserId()
+  const { data, error } = await supabase
+    .from('weeks')
+    .insert({ user_id, start_date: toISODate(startDate) })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function setWeekStatus(id: string, status: Week['status']): Promise<void> {
+  assertConfigured()
+  const { error } = await supabase.from('weeks').update({ status }).eq('id', id)
+  if (error) throw error
+}
+
+// ------------------------------------------------------------------ Wochen-Aktivitäten
+
+export async function listWeekItems(weekId: string): Promise<WeekItem[]> {
+  assertConfigured()
+  const { data, error } = await supabase
+    .from('week_items')
+    .select('*')
+    .eq('week_id', weekId)
+    .order('sort_order')
+    .order('created_at')
+  if (error) throw error
+  return data ?? []
+}
+
+export async function createWeekItem(input: {
+  week_id: string
+  role_id: string
+  title: string
+  quadrant: Quadrant
+  goal_id?: string | null
+  sort_order?: number
+}): Promise<WeekItem> {
+  assertConfigured()
+  const user_id = await currentUserId()
+  const { data, error } = await supabase
+    .from('week_items')
+    .insert({
+      user_id,
+      week_id: input.week_id,
+      role_id: input.role_id,
+      title: input.title,
+      quadrant: input.quadrant,
+      goal_id: input.goal_id ?? null,
+      sort_order: input.sort_order ?? 0,
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateWeekItem(
+  id: string,
+  patch: Partial<
+    Pick<WeekItem, 'title' | 'quadrant' | 'goal_id' | 'done' | 'planned_day' | 'start_time' | 'end_time' | 'sort_order'>
+  >,
+): Promise<void> {
+  assertConfigured()
+  const { error } = await supabase.from('week_items').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteWeekItem(id: string): Promise<void> {
+  assertConfigured()
+  const { error } = await supabase.from('week_items').delete().eq('id', id)
   if (error) throw error
 }

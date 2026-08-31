@@ -6,6 +6,8 @@ import { LoadingState } from '@/components/States'
 import MissionPage from '@/pages/MissionPage'
 import Placeholder from '@/pages/Placeholder'
 import RolesPage from '@/pages/RolesPage'
+import SettingsPage from '@/pages/SettingsPage'
+import WeekPage from '@/pages/WeekPage'
 
 export default function App() {
   const { session, loading } = useAuth()
@@ -25,7 +27,8 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/heute" replace />} />
         <Route path="/heute" element={<Placeholder title="Heute" phase="Phase 4" />} />
-        <Route path="/woche" element={<Placeholder title="Woche" phase="Phase 3" />} />
+        <Route path="/woche" element={<WeekPage />} />
+        <Route path="/einstellungen" element={<SettingsPage />} />
         <Route path="/rollen" element={<RolesPage />} />
         <Route path="/mission" element={<MissionPage />} />
         <Route path="*" element={<Navigate to="/heute" replace />} />
