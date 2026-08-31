@@ -1,6 +1,7 @@
 # Verification
 
-Stand: 31.08.2026 · Phasen 1–3 umgesetzt, live deployt.
+Stand: 31.08.2026 · Phasen 1–4 umgesetzt, live deployt.
+Offen: Phase 5 (PWA-Politur, Screenshots, Lighthouse) und die optionale Phase 6.
 
 Legende: **PASS** = geprüft und bestanden · **FAIL** = geprüft bzw. nicht
 verifizierbar, mit Begründung · **OFFEN** = gehört zu einer späteren Phase.
@@ -12,7 +13,7 @@ verifizierbar, mit Begründung · **OFFEN** = gehört zu einer späteren Phase.
 | 1 | `npm run build` läuft ohne Fehler | **PASS** | `✓ built in 13.62s` · PWA `precache 12 entries (494.82 KiB)` |
 | 2 | `npx tsc --noEmit` meldet null Fehler | **PASS** | Exit-Code 0, keine Ausgabe |
 | 3 | `npm run lint` meldet null Errors | **PASS** | `eslint .` → keine Ausgabe, 0 Probleme |
-| 4 | `npx playwright test` — alle Tests grün | **PASS** | CI-Lauf `33402965808`: `32 passed, 2 skipped`. Übersprungen sind nur die beiden Wochen-Tests im Desktop-Projekt — sie arbeiten auf denselben Daten und laufen deshalb bewusst nur im Mobile-Projekt (390×844). Lokal `26 passed, 8 skipped`, weil hier kein Testnutzer-Passwort hinterlegt ist. |
+| 4 | `npx playwright test` — alle Tests grün | **PASS** | Lokal `37 passed, 7 skipped`. Übersprungen sind ausschließlich die datenverändernden Tests im Desktop-Projekt: sie arbeiten auf demselben Testnutzer und laufen deshalb bewusst nur im Mobile-Projekt (390×844, das Zielgerät). |
 | 5 | GitHub Actions deployt auf Pages, Live-URL liefert HTTP 200 | **PASS** | Lauf `33402965808`: `Lint, Typecheck, Tests, Build: success`, `GitHub Pages: success`. `curl https://bittnerluis06-bit.github.io/Weekly/` → **200**, Titel `Weekly Planner`; `/manifest.webmanifest` → 200. |
 
 Zusätzlich, nicht in der DoD gefordert:
@@ -31,11 +32,11 @@ Zusätzlich, nicht in der DoD gefordert:
 | 7 | Rolle + kurz-/langfristiges Ziel, getrennt dargestellt | **PASS** | `e2e/roles.spec.ts`, grün im selben Lauf. Prüft zusätzlich, dass kein Ziel im falschen Abschnitt auftaucht. |
 | 8 | Woche planen: 5 Rollen × 2 Aktivitäten, Quadrant, Verteilung, aktivieren | **PASS** | `e2e/week.spec.ts`, grün im selben Lauf. Ergänzend 13 Komponententests zu Warnungen bei 0 und >3 Aktivitäten, Quadrantenwahl und Zusammenfassung. |
 | 9 | Fixtermine erscheinen an den richtigen Wochentagen | **PASS** | `e2e/week.spec.ts`: Fixtermin über die Einstellungen angelegt, erscheint unter Mittwoch mit `17:15–19:00` und nicht unter Donnerstag. Ergänzend `StepSchedule.test.tsx` (inaktive Termine werden ausgeblendet). |
-| 10 | Abhaken übersteht einen Reload | **OFFEN** | Phase 4 |
-| 11 | Verschieben auf morgen in max. 2 Interaktionen | **OFFEN** | Phase 4 |
-| 12 | Review-Kennzahlen korrekt berechnet | **OFFEN** | Phase 4 |
-| 13 | Ohne Review keine neue Woche | **OFFEN** | Phase 4 |
-| 14 | Zweiter Browser-Context sieht dieselben Daten | **OFFEN** | Phase 4 |
+| 10 | Abhaken übersteht einen Reload | **PASS** | `e2e/today.spec.ts`: abhaken → `aria-pressed="true"` → Reload → weiterhin `true`. |
+| 11 | Verschieben auf morgen in max. 2 Interaktionen | **PASS** | `e2e/today.spec.ts`: **eine** Interaktion — ein Tap auf „Auf morgen“. Der Test liest anschließend `planned_day` aus der Datenbank und vergleicht mit dem morgigen Wochentag. |
+| 12 | Review-Kennzahlen korrekt berechnet | **PASS** | `e2e/review.spec.ts` mit bekannter Bilanz (4 Aktivitäten, 3 erledigt): gesamt `75 %`, Rolle A `1/2 · 50 %`, Rolle B `2/2 · 100 %`, erledigte Quadranten Q1 = 1, Q2 = 2, Q3 = 0, Q4 = 0. Zusätzlich: leeres Absenden wird abgewiesen. |
+| 13 | Ohne Review keine neue Woche | **PASS** | `e2e/review.spec.ts`: Vorwoche ohne Review → `/woche` zeigt „Zuerst die Vorwoche abschließen“ mit Link zum Review, kein „Weiter“-Knopf. Nach dem Review ist die Planung offen und zeigt den Rückblick. |
+| 14 | Zweiter Browser-Context sieht dieselben Daten | **PASS** | `e2e/today.spec.ts`: abhaken im ersten Context, zweiter Context mit demselben `storageState` sieht denselben Status. |
 
 ## Qualität
 
@@ -47,9 +48,7 @@ Zusätzlich, nicht in der DoD gefordert:
 
 ## Offene Blocker
 
-1. **Migration `0004_fixed_events_no_seed.sql`** im SQL Editor ausführen — löscht
-   die alten Seed-Fixtermine und nimmt sie aus `seed_my_data()` heraus.
-2. **Lokales `E2E_PASSWORD`** — in der `.env` steht noch der Platzhalter
-   `<dein Passwort>`, deshalb überspringen die angemeldeten Tests hier. In den
-   GitHub-Secrets ist das echte Passwort hinterlegt, dort laufen sie. Nur nötig,
-   wenn diese Tests auch lokal laufen sollen.
+1. Migrationen 0001–0004 sind laut Nutzer eingespielt; die Tests laufen gegen das
+   Live-Projekt und bestätigen das indirekt.
+2. Keine weiteren. Phase 5 (Kriterien 15–17, davon 17 bereits PASS) steht als
+   Nächstes an.

@@ -13,10 +13,13 @@ const BASE = '/Weekly/'
 
 export default defineConfig({
   testDir: './e2e',
-  fullyParallel: true,
+  // Alle angemeldeten Tests arbeiten auf demselben Supabase-Testnutzer. Parallel
+  // laufende Dateien würden sich gegenseitig Wochen und Aktivitäten löschen,
+  // deshalb ein Worker und keine Parallelität innerhalb der Dateien.
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: process.env.CI ? 'line' : 'html',
   use: {
     baseURL: `http://localhost:${PORT}${BASE}`,

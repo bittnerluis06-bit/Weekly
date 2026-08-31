@@ -28,6 +28,7 @@ function storageKey(supabaseUrl: string): string {
 
 interface Session {
   access_token: string
+  user: { id: string }
   [key: string]: unknown
 }
 
@@ -49,11 +50,14 @@ async function signIn(request: APIRequestContext): Promise<Session> {
 /** Direkter REST-Zugriff als angemeldeter Testnutzer — zum Aufräumen. */
 export interface Db {
   select: <T = unknown>(path: string) => Promise<T>
+  post: (path: string, body: unknown) => Promise<void>
   patch: (path: string, body: unknown) => Promise<void>
   remove: (path: string) => Promise<void>
+  /** Die eigene user_id — PostgREST-Inserts brauchen sie explizit. */
+  userId: string
 }
 
-function makeDb(request: APIRequestContext, token: string): Db {
+function makeDb(request: APIRequestContext, token: string, userId: string): Db {
   const headers = {
     apikey: anonKey!,
     Authorization: `Bearer ${token}`,
@@ -61,10 +65,19 @@ function makeDb(request: APIRequestContext, token: string): Db {
   }
 
   return {
+    userId,
     async select<T>(path: string) {
       const response = await request.get(`${url}/rest/v1/${path}`, { headers })
       expect(response.ok(), await response.text()).toBe(true)
       return (await response.json()) as T
+    },
+    async post(path, body) {
+      // user_id automatisch ergänzen — ohne sie greift die RLS-Policy nicht.
+      const withUser = Array.isArray(body)
+        ? body.map((row) => ({ user_id: userId, ...(row as object) }))
+        : { user_id: userId, ...(body as object) }
+      const response = await request.post(`${url}/rest/v1/${path}`, { headers, data: withUser })
+      expect(response.ok(), await response.text()).toBe(true)
     },
     async patch(path, body) {
       const response = await request.patch(`${url}/rest/v1/${path}`, { headers, data: body })
@@ -100,7 +113,7 @@ export const test = base.extend<{ authedPage: Page; db: Db }>({
   db: async ({ request }, use) => {
     test.skip(!hasCredentials, 'E2E_EMAIL/E2E_PASSWORD nicht gesetzt — angemeldete Tests übersprungen.')
     const session = await signIn(request)
-    await use(makeDb(request, session.access_token))
+    await use(makeDb(request, session.access_token, session.user.id))
   },
 })
 

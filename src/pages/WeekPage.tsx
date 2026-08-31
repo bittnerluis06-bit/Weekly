@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import {
   createWeekItem,
   deleteWeekItem,
   getMission,
   getOrCreateWeek,
+  getPreviousWeek,
+  getReview,
   listFixedEvents,
   listGoals,
   listRoles,
@@ -23,6 +26,7 @@ import type {
   FixedEvent,
   Goal,
   Quadrant,
+  Review,
   Role,
   Week,
   WeekItem,
@@ -37,6 +41,8 @@ export default function WeekPage() {
   const [items, setItems] = useState<WeekItem[]>([])
   const [fixedEvents, setFixedEvents] = useState<FixedEvent[]>([])
   const [mission, setMission] = useState('')
+  const [previousWeek, setPreviousWeek] = useState<Week | null>(null)
+  const [previousReview, setPreviousReview] = useState<Review | null>(null)
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
@@ -46,6 +52,16 @@ export default function WeekPage() {
     setLoading(true)
     setError(null)
     try {
+      // Vor allem anderen: hat die Vorwoche ein Review? Ohne das wird nicht geplant.
+      const previous = await getPreviousWeek(monday)
+      const previousReviewRow = previous ? await getReview(previous.id) : null
+      setPreviousWeek(previous)
+      setPreviousReview(previousReviewRow)
+      if (previous && !previousReviewRow) {
+        setLoading(false)
+        return
+      }
+
       const currentWeek = await getOrCreateWeek(monday)
       const [roleList, goalList, itemList, eventList, missionRow] = await Promise.all([
         listRoles(),
@@ -90,6 +106,26 @@ export default function WeekPage() {
   }
 
   if (loading) return <LoadingState label="Woche wird geladen" />
+
+  // DoD 13: ohne abgeschlossenes Review der Vorwoche keine neue Planung.
+  if (previousWeek && !previousReview) {
+    return (
+      <section className="space-y-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Woche planen</h1>
+        <div role="alert" className="card space-y-3 border-amber-300 dark:border-amber-900">
+          <h2 className="font-semibold">Zuerst die Vorwoche abschließen</h2>
+          <p className="text-neutral-600 dark:text-neutral-400">
+            Die Woche vom {formatWeekRange(new Date(`${previousWeek.start_date}T00:00:00`))} hat noch
+            kein Review. Der Rückblick gehört zum Zyklus — ohne ihn planst du blind weiter.
+          </p>
+          <Link to={`/review/${previousWeek.id}`} className="btn-primary inline-flex">
+            Zum Wochenreview
+          </Link>
+        </div>
+      </section>
+    )
+  }
+
   if (!week) return <ErrorState message={error ?? 'Woche nicht verfügbar.'} onRetry={() => void load()} />
 
   if (week.status !== 'planning') {
@@ -118,7 +154,7 @@ export default function WeekPage() {
 
       {error && <ErrorState message={error} onRetry={() => void load()} />}
 
-      {step === 0 && <StepMission mission={mission} />}
+      {step === 0 && <StepMission mission={mission} previousReview={previousReview} />}
 
       {step === 1 && (
         <StepActivities
@@ -194,7 +230,13 @@ export default function WeekPage() {
   )
 }
 
-function StepMission({ mission }: { mission: string }) {
+function StepMission({
+  mission,
+  previousReview,
+}: {
+  mission: string
+  previousReview: Review | null
+}) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -224,9 +266,31 @@ function StepMission({ mission }: { mission: string }) {
 
       <section className="card space-y-2">
         <h2 className="text-lg font-semibold">Rückblick auf die Vorwoche</h2>
-        <p className="text-neutral-600 dark:text-neutral-400">
-          Das Wochenreview entsteht in Phase 4. Sobald es Reviews gibt, steht hier das der Vorwoche.
-        </p>
+        {previousReview ? (
+          <dl className="space-y-2">
+            {(
+              [
+                ['Lief gut', previousReview.wins],
+                ['Lief nicht', previousReview.misses],
+                ['Learnings', previousReview.learnings],
+                ['Fokus für diese Woche', previousReview.next_week_focus],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label}>
+                <dt className="font-medium">{label}</dt>
+                <dd className="break-words text-neutral-600 dark:text-neutral-400">{value}</dd>
+              </div>
+            ))}
+            <div>
+              <dt className="font-medium">Bewertung</dt>
+              <dd className="text-neutral-600 dark:text-neutral-400">{previousReview.rating} von 5</dd>
+            </div>
+          </dl>
+        ) : (
+          <p className="text-neutral-600 dark:text-neutral-400">
+            Noch kein Review vorhanden — das ist die erste geplante Woche.
+          </p>
+        )}
       </section>
     </div>
   )

@@ -4,9 +4,10 @@ import LoginScreen from '@/auth/LoginScreen'
 import AppLayout from '@/components/AppLayout'
 import { LoadingState } from '@/components/States'
 import MissionPage from '@/pages/MissionPage'
-import Placeholder from '@/pages/Placeholder'
+import ReviewPage from '@/pages/ReviewPage'
 import RolesPage from '@/pages/RolesPage'
 import SettingsPage from '@/pages/SettingsPage'
+import TodayPage from '@/pages/TodayPage'
 import WeekPage from '@/pages/WeekPage'
 
 export default function App() {
@@ -26,8 +27,10 @@ export default function App() {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<Navigate to="/heute" replace />} />
-        <Route path="/heute" element={<Placeholder title="Heute" phase="Phase 4" />} />
+        <Route path="/heute" element={<TodayPage />} />
         <Route path="/woche" element={<WeekPage />} />
+        <Route path="/review" element={<ReviewPage />} />
+        <Route path="/review/:weekId" element={<ReviewPage />} />
         <Route path="/einstellungen" element={<SettingsPage />} />
         <Route path="/rollen" element={<RolesPage />} />
         <Route path="/mission" element={<MissionPage />} />

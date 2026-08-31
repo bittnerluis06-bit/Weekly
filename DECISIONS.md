@@ -142,6 +142,43 @@ Phase 3 nicht völlig ungeprüft bleibt, sind die drei Schritt-Komponenten mit
 Testing Library abgedeckt: Warnungen bei 0 bzw. >3 Aktivitäten, Quadranten- und
 Tageszuordnung, Fixtermine am richtigen Tag, optionale Uhrzeit.
 
+## Phase 4
+
+### D25 — „Auf morgen“ als eigener Knopf
+Kriterium 11 verlangt höchstens zwei Interaktionen. Ein Auswahlfeld braucht zwei
+(öffnen, Tag wählen); der häufigste Fall beim täglichen Anpassen ist aber
+„schiebe ich auf morgen“. Dafür gibt es einen Knopf mit **einem** Tap, das
+Auswahlfeld für jeden anderen Tag bleibt daneben.
+
+### D26 — Review schließt die Woche ab
+`saveReview()` setzt die Woche direkt auf `closed`. Ein separater Knopf „Woche
+abschließen“ wäre ein zweiter Weg zum selben Ziel und könnte einen Zustand
+erzeugen, in dem die Woche geschlossen ist, aber kein Review existiert — genau
+das, was Kriterium 13 verhindern soll.
+
+### D27 — Review-Zwang gilt nur für die unmittelbare Vorwoche
+Geprüft wird die jüngste Woche vor der aktuellen (`getPreviousWeek`). Alle Wochen
+davor zu prüfen würde nach einer Pause eine Kette von Pflicht-Reviews erzeugen,
+die niemand nachholt. Der Zyklus soll tragen, nicht blockieren.
+
+### D28 — Bewertungs-Radios als volle Klickfläche
+Ein `sr-only`-Radio im Label ist für Zeigegeräte nicht direkt anklickbar (das
+Label fängt den Klick ab) — Playwright ist darüber gestolpert, und
+Automatisierung wie Screenreader-Fokus leiden gleichermaßen. Jetzt liegt das
+Eingabefeld mit `absolute inset-0 opacity-0` über der ganzen Fläche: echtes
+Radio, 44px Ziel, ein Tap.
+
+### D29 — Playwright läuft mit einem Worker
+Alle angemeldeten Tests teilen sich einen Supabase-Testnutzer. Parallel laufende
+Dateien haben sich gegenseitig Wochen und Aktivitäten gelöscht. Deshalb
+`fullyParallel: false` und `workers: 1`. Zusätzlich räumt jede Datei ihre
+Vorbedingungen selbst auf, sodass die Reihenfolge egal ist.
+
+### D30 — Datenverändernde E2E-Tests nur im Mobile-Projekt
+Dieselben Tests in zwei Projekten würden auf denselben Daten arbeiten. Sie laufen
+deshalb nur bei 390×844 — dem laut Abschnitt 5 primären Gerät. Die Tests ohne
+Datenzugriff (Smoke, RLS, Deeplink) laufen weiterhin in beiden Viewports.
+
 ### D17 — ESLint-React-Regeln nur auf `src/`
 Playwrights Fixture-Parameter heißt `use` und wurde von `react-hooks/rules-of-hooks`
 als Hook-Aufruf gewertet. Statt die Regel global zu lockern, gilt sie jetzt nur

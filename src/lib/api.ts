@@ -8,6 +8,7 @@ import type {
   Mission,
   MissionVersion,
   Quadrant,
+  Review,
   Role,
   Week,
   WeekItem,
@@ -296,4 +297,60 @@ export async function deleteWeekItem(id: string): Promise<void> {
   assertConfigured()
   const { error } = await supabase.from('week_items').delete().eq('id', id)
   if (error) throw error
+}
+
+export async function getWeekById(id: string): Promise<Week | null> {
+  assertConfigured()
+  const { data, error } = await supabase.from('weeks').select('*').eq('id', id).maybeSingle()
+  if (error) throw error
+  return data
+}
+
+/** Die jüngste Woche vor `before` — für den Review-Zwang und den Rückblick. */
+export async function getPreviousWeek(before: Date): Promise<Week | null> {
+  assertConfigured()
+  const { data, error } = await supabase
+    .from('weeks')
+    .select('*')
+    .lt('start_date', toISODate(before))
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+// ------------------------------------------------------------------ Reviews
+
+export async function getReview(weekId: string): Promise<Review | null> {
+  assertConfigured()
+  const { data, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('week_id', weekId)
+    .maybeSingle()
+  if (error) throw error
+  return data
+}
+
+export async function saveReview(input: {
+  week_id: string
+  wins: string
+  misses: string
+  learnings: string
+  next_week_focus: string
+  rating: number
+}): Promise<Review> {
+  assertConfigured()
+  const user_id = await currentUserId()
+  const { data, error } = await supabase
+    .from('reviews')
+    .upsert({ user_id, ...input }, { onConflict: 'week_id' })
+    .select()
+    .single()
+  if (error) throw error
+
+  // Mit dem Review gilt die Woche als abgeschlossen.
+  await setWeekStatus(input.week_id, 'closed')
+  return data
 }

@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures'
+import { expect, test, type Db } from './fixtures'
 import { startOfWeek, toISODate } from '../src/lib/date'
 
 // Beide Tests arbeiten auf der Woche desselben Nutzers. Parallel in zwei
@@ -12,12 +12,14 @@ interface WeekRow {
   id: string
 }
 
-/** Woche auf Planungsstand zurücksetzen: Aktivitäten weg, Status `planning`. */
-async function resetWeek(db: {
-  select: <T>(path: string) => Promise<T>
-  patch: (path: string, body: unknown) => Promise<void>
-  remove: (path: string) => Promise<void>
-}) {
+/**
+ * Woche auf Planungsstand zurücksetzen: Aktivitäten weg, Status `planning`.
+ * Ältere Wochen werden entfernt, sonst blockiert der Review-Zwang (DoD 13)
+ * die Planung — der Test soll unabhängig von der Reihenfolge laufen.
+ */
+async function resetWeek(db: Db) {
+  await db.remove(`weeks?start_date=lt.${monday}`)
+
   const weeks = await db.select<WeekRow[]>(`weeks?start_date=eq.${monday}&select=id`)
   const week = weeks[0]
   if (!week) return
